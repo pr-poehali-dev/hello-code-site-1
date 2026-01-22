@@ -130,7 +130,7 @@ export default function Index() {
                 </div>
               </div>
             </div>
-            <div className="relative lg:mt-16 flex justify-center lg:justify-end mt-8 lg:mt-0">
+            <div className="relative lg:mt-24 flex justify-center lg:justify-end mt-8 lg:mt-0">
               <div className="relative w-64 sm:w-80 md:w-96 h-64 sm:h-80 md:h-96">
                 <div 
                   className="w-full h-full bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 rounded-2xl md:rounded-3xl shadow-2xl animate-scale-in overflow-hidden cursor-crosshair relative"
