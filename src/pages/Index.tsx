@@ -19,8 +19,11 @@ export default function Index() {
 
   const [flippedCard, setFlippedCard] = useState<number | null>(null);
   const [gameScore, setGameScore] = useState(0);
-  const [rocketPosition, setRocketPosition] = useState({ x: 50, y: 50 });
-  const [stars, setStars] = useState<{ id: number; x: number; y: number; emoji: string }[]>([]);
+  const [birdY, setBirdY] = useState(50);
+  const [birdVelocity, setBirdVelocity] = useState(0);
+  const [pipes, setPipes] = useState<{ id: number; x: number; gapY: number }[]>([]);
+  const [gameStarted, setGameStarted] = useState(false);
+  const [gameOver, setGameOver] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,38 +34,62 @@ export default function Index() {
     setFlippedCard(flippedCard === index ? null : index);
   };
 
-  const spawnStar = () => {
-    const emojis = ['⭐', '🌟', '✨', '💫', '🎯', '🎨', '🎮', '🚀'];
-    const newStar = {
-      id: Date.now(),
-      x: Math.random() * 80 + 10,
-      y: Math.random() * 80 + 10,
-      emoji: emojis[Math.floor(Math.random() * emojis.length)]
-    };
-    setStars(prev => [...prev, newStar]);
-    setTimeout(() => {
-      setStars(prev => prev.filter(s => s.id !== newStar.id));
-    }, 3000);
-  };
-
-  const handleRocketMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
-    setRocketPosition({ x, y });
-
-    stars.forEach(star => {
-      const distance = Math.sqrt(Math.pow(star.x - x, 2) + Math.pow(star.y - y, 2));
-      if (distance < 10) {
-        setGameScore(prev => prev + 1);
-        setStars(prev => prev.filter(s => s.id !== star.id));
-      }
-    });
+  const handleFlap = () => {
+    if (gameOver) {
+      setBirdY(50);
+      setBirdVelocity(0);
+      setPipes([]);
+      setGameScore(0);
+      setGameOver(false);
+      setGameStarted(false);
+      return;
+    }
+    if (!gameStarted) setGameStarted(true);
+    setBirdVelocity(-8);
   };
 
   useState(() => {
-    const interval = setInterval(spawnStar, 2000);
-    return () => clearInterval(interval);
+    if (!gameStarted || gameOver) return;
+
+    const gameLoop = setInterval(() => {
+      setBirdVelocity(v => v + 0.6);
+      setBirdY(y => {
+        const newY = y + birdVelocity;
+        if (newY > 90 || newY < 5) {
+          setGameOver(true);
+          return y;
+        }
+        return newY;
+      });
+
+      setPipes(prev => {
+        const newPipes = prev.map(p => ({ ...p, x: p.x - 2 })).filter(p => p.x > -15);
+        
+        prev.forEach(pipe => {
+          if (pipe.x < 20 && pipe.x > 15) {
+            const birdTop = birdY;
+            const birdBottom = birdY + 8;
+            if (birdTop < pipe.gapY || birdBottom > pipe.gapY + 30) {
+              setGameOver(true);
+            }
+          }
+          if (pipe.x === 50) {
+            setGameScore(s => s + 1);
+          }
+        });
+
+        if (prev.length === 0 || prev[prev.length - 1].x < 70) {
+          newPipes.push({ 
+            id: Date.now(), 
+            x: 100, 
+            gapY: Math.random() * 40 + 20 
+          });
+        }
+        return newPipes;
+      });
+    }, 50);
+
+    return () => clearInterval(gameLoop);
   });
 
   return (
@@ -130,59 +157,81 @@ export default function Index() {
                 </div>
               </div>
             </div>
-            <div className="relative lg:mt-24 flex justify-center lg:justify-end mt-8 lg:mt-0">
+            <div className="relative lg:mt-32 flex justify-center lg:justify-end mt-8 lg:mt-0">
               <div className="relative w-64 sm:w-80 md:w-96 h-64 sm:h-80 md:h-96">
                 <div 
-                  className="w-full h-full bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 rounded-2xl md:rounded-3xl shadow-2xl animate-scale-in overflow-hidden cursor-crosshair relative"
-                  onMouseMove={handleRocketMove}
-                  onClick={spawnStar}
+                  className="w-full h-full bg-gradient-to-b from-sky-400 to-sky-200 rounded-2xl md:rounded-3xl shadow-2xl animate-scale-in overflow-hidden cursor-pointer relative"
+                  onClick={handleFlap}
                 >
-                  <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-lg text-white font-bold">
+                  <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-lg font-bold text-foreground">
                     Счёт: {gameScore}
                   </div>
                   
-                  <div className="absolute top-4 left-4 bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-lg text-white text-xs">
-                    Поймай звёзды! 🎯
-                  </div>
-
-                  {stars.map(star => (
-                    <div
-                      key={star.id}
-                      className="absolute text-2xl animate-pulse transition-all duration-300"
-                      style={{ 
-                        left: `${star.x}%`, 
-                        top: `${star.y}%`,
-                        transform: 'translate(-50%, -50%)'
-                      }}
-                    >
-                      {star.emoji}
+                  {!gameStarted && !gameOver && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="bg-white/90 backdrop-blur-sm px-6 py-4 rounded-xl text-center">
+                        <p className="font-bold text-lg mb-2">Flappy Code 🚀</p>
+                        <p className="text-sm text-muted-foreground">Кликни, чтобы играть!</p>
+                      </div>
                     </div>
-                  ))}
+                  )}
+
+                  {gameOver && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="bg-white/90 backdrop-blur-sm px-6 py-4 rounded-xl text-center">
+                        <p className="font-bold text-lg mb-2">Игра окончена! 💥</p>
+                        <p className="text-sm text-muted-foreground mb-2">Счёт: {gameScore}</p>
+                        <p className="text-xs text-muted-foreground">Кликни для перезапуска</p>
+                      </div>
+                    </div>
+                  )}
 
                   <div
-                    className="absolute text-3xl transition-all duration-150 ease-out"
+                    className="absolute text-3xl transition-all duration-100"
                     style={{ 
-                      left: `${rocketPosition.x}%`, 
-                      top: `${rocketPosition.y}%`,
-                      transform: 'translate(-50%, -50%)'
+                      left: '20%', 
+                      top: `${birdY}%`,
+                      transform: `translate(-50%, -50%) rotate(${birdVelocity * 3}deg)`
                     }}
                   >
                     🚀
                   </div>
 
-                  <div className="absolute inset-0 pointer-events-none">
-                    {[...Array(20)].map((_, i) => (
+                  {pipes.map(pipe => (
+                    <div key={pipe.id}>
                       <div
-                        key={i}
-                        className="absolute w-1 h-1 bg-white rounded-full animate-pulse"
+                        className="absolute bg-green-600 border-4 border-green-700 rounded"
                         style={{
-                          left: `${Math.random() * 100}%`,
-                          top: `${Math.random() * 100}%`,
-                          animationDelay: `${Math.random() * 2}s`
+                          left: `${pipe.x}%`,
+                          top: 0,
+                          width: '12%',
+                          height: `${pipe.gapY}%`
                         }}
                       />
-                    ))}
-                  </div>
+                      <div
+                        className="absolute bg-green-600 border-4 border-green-700 rounded"
+                        style={{
+                          left: `${pipe.x}%`,
+                          top: `${pipe.gapY + 30}%`,
+                          width: '12%',
+                          height: `${70 - pipe.gapY}%`
+                        }}
+                      />
+                    </div>
+                  ))}
+
+                  <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-green-800 to-green-600" />
+                  
+                  {[...Array(5)].map((_, i) => (
+                    <div
+                      key={i}
+                      className="absolute w-8 h-8 bg-white/30 rounded-full"
+                      style={{
+                        left: `${20 + i * 20}%`,
+                        top: `${40 + Math.sin(i) * 20}%`,
+                      }}
+                    />
+                  ))}
                 </div>
               </div>
             </div>
