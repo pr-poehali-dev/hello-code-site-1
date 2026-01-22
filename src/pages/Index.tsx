@@ -51,8 +51,8 @@ export default function Index() {
 
       <section className="relative overflow-hidden py-20 md:py-32">
         <div className="container mx-auto px-4">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div className="space-y-8 animate-fade-in">
+          <div className="grid lg:grid-cols-2 gap-16 items-start">
+            <div className="space-y-8 animate-fade-in lg:pt-8">
               <Badge className="text-base px-4 py-2 bg-secondary text-white">
                 🎁 Первый урок БЕСПЛАТНО!
               </Badge>
@@ -87,11 +87,11 @@ export default function Index() {
                 </div>
               </div>
             </div>
-            <div className="relative">
+            <div className="relative lg:mt-16">
               <img 
                 src="https://cdn.poehali.dev/projects/a5c90dd4-c760-4d2d-9991-4433d1bfb938/files/aa69f86a-4bb7-45f3-9b3b-0682b015f311.jpg" 
                 alt="Дети учатся программированию" 
-                className="rounded-3xl shadow-2xl animate-scale-in"
+                className="rounded-3xl shadow-2xl animate-scale-in max-w-md mx-auto"
               />
               <div className="absolute -top-4 -right-4 w-24 h-24 bg-secondary rounded-full flex items-center justify-center text-4xl animate-float">
                 🚀
