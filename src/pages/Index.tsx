@@ -19,9 +19,9 @@ export default function Index() {
 
   const [flippedCard, setFlippedCard] = useState<number | null>(null);
   const [gameScore, setGameScore] = useState(0);
-  const [birdY, setBirdY] = useState(50);
-  const [birdVelocity, setBirdVelocity] = useState(0);
-  const [pipes, setPipes] = useState<{ id: number; x: number; gapY: number; scored: boolean }[]>([]);
+  const [ballY, setBallY] = useState(50);
+  const [ballVelocity, setBallVelocity] = useState(0);
+  const [obstacles, setObstacles] = useState<{ id: number; x: number; height: number; scored: boolean }[]>([]);
   const [gameStarted, setGameStarted] = useState(false);
   const [gameOver, setGameOver] = useState(false);
 
@@ -34,11 +34,11 @@ export default function Index() {
     setFlippedCard(flippedCard === index ? null : index);
   };
 
-  const handleFlap = () => {
+  const handleJump = () => {
     if (gameOver) {
-      setBirdY(50);
-      setBirdVelocity(0);
-      setPipes([]);
+      setBallY(50);
+      setBallVelocity(0);
+      setObstacles([]);
       setGameScore(0);
       setGameOver(false);
       setGameStarted(false);
@@ -47,60 +47,63 @@ export default function Index() {
     if (!gameStarted) {
       setGameStarted(true);
     }
-    setBirdVelocity(-6);
+    setBallVelocity(-5);
   };
 
   useEffect(() => {
     if (!gameStarted || gameOver) return;
 
-    const gravity = 0.5;
+    const gravity = 0.3;
+    const groundLevel = 75;
+    
     const gameLoop = setInterval(() => {
-      setBirdVelocity(v => v + gravity);
+      setBallVelocity(v => v + gravity);
       
-      setBirdY(y => {
-        const newY = y + birdVelocity;
-        if (newY > 85 || newY < 0) {
-          setGameOver(true);
-          return y;
+      setBallY(y => {
+        const newY = y + ballVelocity;
+        if (newY > groundLevel) {
+          return groundLevel;
+        }
+        if (newY < 5) {
+          return 5;
         }
         return newY;
       });
 
-      setPipes(prev => {
-        const newPipes = prev.map(p => ({ ...p, x: p.x - 2 })).filter(p => p.x > -15);
+      setObstacles(prev => {
+        const newObstacles = prev.map(o => ({ ...o, x: o.x - 1.2 })).filter(o => o.x > -10);
         
-        newPipes.forEach(pipe => {
-          if (pipe.x < 25 && pipe.x > 15) {
-            setBirdY(currentY => {
-              const birdTop = currentY;
-              const birdBottom = currentY + 10;
-              if (birdTop < pipe.gapY - 2 || birdBottom > pipe.gapY + 32) {
+        newObstacles.forEach(obstacle => {
+          if (obstacle.x < 25 && obstacle.x > 10) {
+            setBallY(currentY => {
+              const ballBottom = currentY + 6;
+              if (ballBottom > groundLevel - obstacle.height + 3) {
                 setGameOver(true);
               }
               return currentY;
             });
           }
           
-          if (pipe.x < 20 && !pipe.scored) {
-            pipe.scored = true;
+          if (obstacle.x < 15 && !obstacle.scored) {
+            obstacle.scored = true;
             setGameScore(s => s + 1);
           }
         });
 
-        if (newPipes.length === 0 || newPipes[newPipes.length - 1].x < 65) {
-          newPipes.push({ 
+        if (newObstacles.length === 0 || newObstacles[newObstacles.length - 1].x < 75) {
+          newObstacles.push({ 
             id: Date.now(), 
-            x: 100, 
-            gapY: Math.random() * 40 + 20,
+            x: 100,
+            height: Math.random() * 12 + 8,
             scored: false
           });
         }
-        return newPipes;
+        return newObstacles;
       });
     }, 30);
 
     return () => clearInterval(gameLoop);
-  }, [gameStarted, gameOver, birdVelocity]);
+  }, [gameStarted, gameOver, ballVelocity]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-accent/30 font-open-sans">
@@ -170,29 +173,25 @@ export default function Index() {
             <div className="relative lg:mt-32 flex justify-center lg:justify-end mt-8 lg:mt-0">
               <div className="relative w-64 sm:w-80 md:w-96 h-64 sm:h-80 md:h-96">
                 <div 
-                  className="w-full h-full bg-gradient-to-b from-sky-400 to-sky-200 rounded-2xl md:rounded-3xl shadow-2xl animate-scale-in overflow-hidden cursor-pointer relative"
-                  onClick={handleFlap}
+                  className="w-full h-full bg-gradient-to-b from-purple-400 via-pink-300 to-orange-200 rounded-2xl md:rounded-3xl shadow-2xl animate-scale-in overflow-hidden cursor-pointer relative"
+                  onClick={handleJump}
                 >
-                  {pipes.map(pipe => (
-                    <div key={pipe.id}>
-                      <div
-                        className="absolute bg-green-600 border-4 border-green-700 rounded"
-                        style={{
-                          left: `${pipe.x}%`,
-                          top: 0,
-                          width: '12%',
-                          height: `${pipe.gapY}%`
-                        }}
-                      />
-                      <div
-                        className="absolute bg-green-600 border-4 border-green-700 rounded"
-                        style={{
-                          left: `${pipe.x}%`,
-                          top: `${pipe.gapY + 30}%`,
-                          width: '12%',
-                          height: `${70 - pipe.gapY}%`
-                        }}
-                      />
+                  <div className="absolute bottom-0 left-0 right-0 h-[25%] bg-gradient-to-t from-purple-800 to-purple-600 border-t-4 border-purple-900" />
+
+                  {obstacles.map(obstacle => (
+                    <div
+                      key={obstacle.id}
+                      className="absolute bg-gradient-to-r from-red-600 to-red-500 border-4 border-red-700 rounded-t-lg z-10"
+                      style={{
+                        left: `${obstacle.x}%`,
+                        bottom: '25%',
+                        width: '8%',
+                        height: `${obstacle.height}%`
+                      }}
+                    >
+                      <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 text-lg">
+                        ⚠️
+                      </div>
                     </div>
                   ))}
 
@@ -203,8 +202,8 @@ export default function Index() {
                   {!gameStarted && !gameOver && (
                     <div className="absolute inset-0 flex items-center justify-center z-20">
                       <div className="bg-white/90 backdrop-blur-sm px-6 py-4 rounded-xl text-center">
-                        <p className="font-bold text-lg mb-2">Flappy Code 🐦</p>
-                        <p className="text-sm text-muted-foreground">Кликни, чтобы играть!</p>
+                        <p className="font-bold text-lg mb-2">Прыгун 🏀</p>
+                        <p className="text-sm text-muted-foreground">Кликай для прыжка!</p>
                       </div>
                     </div>
                   )}
@@ -220,25 +219,24 @@ export default function Index() {
                   )}
 
                   <div
-                    className="absolute text-3xl transition-all duration-100 z-10"
+                    className="absolute text-4xl z-10 transition-all duration-100"
                     style={{ 
                       left: '20%', 
-                      top: `${birdY}%`,
-                      transform: `translate(-50%, -50%) rotate(${birdVelocity * 3}deg)`
+                      top: `${ballY}%`,
+                      transform: 'translate(-50%, -50%)'
                     }}
                   >
-                    🐦
+                    🏀
                   </div>
-
-                  <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-green-800 to-green-600" />
                   
-                  {[...Array(5)].map((_, i) => (
+                  {[...Array(8)].map((_, i) => (
                     <div
                       key={i}
-                      className="absolute w-8 h-8 bg-white/30 rounded-full"
+                      className="absolute w-6 h-6 bg-white/20 rounded-full animate-pulse"
                       style={{
-                        left: `${20 + i * 20}%`,
-                        top: `${40 + Math.sin(i) * 20}%`,
+                        left: `${10 + i * 12}%`,
+                        top: `${30 + Math.sin(i * 0.5) * 15}%`,
+                        animationDelay: `${i * 0.2}s`
                       }}
                     />
                   ))}
