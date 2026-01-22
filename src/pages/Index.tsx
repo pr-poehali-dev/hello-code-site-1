@@ -49,52 +49,52 @@ export default function Index() {
         </nav>
       </header>
 
-      <section className="relative overflow-hidden py-20 md:py-32">
+      <section className="relative overflow-hidden py-12 md:py-20 lg:py-32">
         <div className="container mx-auto px-4">
-          <div className="grid lg:grid-cols-2 gap-16 items-start">
-            <div className="space-y-8 animate-fade-in lg:pt-8">
-              <Badge className="text-base px-4 py-2 bg-secondary text-white">
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-start">
+            <div className="space-y-6 md:space-y-8 animate-fade-in lg:pt-8">
+              <Badge className="text-sm md:text-base px-3 py-1.5 md:px-4 md:py-2 bg-secondary text-white">
                 🎁 Первый урок БЕСПЛАТНО!
               </Badge>
-              <h1 className="text-5xl md:text-7xl font-montserrat font-extrabold text-foreground leading-tight">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-montserrat font-extrabold text-foreground leading-tight">
                 Программирование для детей
                 <span className="text-primary"> онлайн</span>
               </h1>
-              <p className="text-xl md:text-2xl text-muted-foreground">
+              <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-muted-foreground">
                 Обучаем детей от 7 до 16 лет создавать игры, сайты и приложения. 
                 Развиваем логику, креативность и навыки будущего!
               </p>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Button size="lg" className="text-lg px-8 py-6 bg-gradient-to-r from-primary to-secondary hover:opacity-90">
+              <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
+                <Button size="lg" className="text-base md:text-lg px-6 py-5 md:px-8 md:py-6 bg-gradient-to-r from-primary to-secondary hover:opacity-90 w-full sm:w-auto">
                   <a href="#trial">Записаться на бесплатный урок</a>
                 </Button>
-                <Button size="lg" variant="outline" className="text-lg px-8 py-6">
+                <Button size="lg" variant="outline" className="text-base md:text-lg px-6 py-5 md:px-8 md:py-6 w-full sm:w-auto">
                   <a href="#courses">Выбрать курс</a>
                 </Button>
               </div>
-              <div className="flex flex-wrap gap-8 pt-4">
+              <div className="flex flex-wrap gap-4 md:gap-6 lg:gap-8 pt-2 md:pt-4">
                 <div className="flex items-center gap-2">
-                  <Icon name="Users" size={24} className="text-primary" />
-                  <span className="text-lg font-semibold">2000+ учеников</span>
+                  <Icon name="Users" size={20} className="text-primary md:w-6 md:h-6" />
+                  <span className="text-sm md:text-base lg:text-lg font-semibold">2000+ учеников</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Icon name="Award" size={24} className="text-secondary" />
-                  <span className="text-lg font-semibold">5 лет опыта</span>
+                  <Icon name="Award" size={20} className="text-secondary md:w-6 md:h-6" />
+                  <span className="text-sm md:text-base lg:text-lg font-semibold">5 лет опыта</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Icon name="Star" size={24} className="text-secondary" />
-                  <span className="text-lg font-semibold">4.9/5 рейтинг</span>
+                  <Icon name="Star" size={20} className="text-secondary md:w-6 md:h-6" />
+                  <span className="text-sm md:text-base lg:text-lg font-semibold">4.9/5 рейтинг</span>
                 </div>
               </div>
             </div>
-            <div className="relative lg:mt-16 flex justify-center lg:justify-end">
-              <div className="relative w-80 md:w-96">
+            <div className="relative lg:mt-16 flex justify-center lg:justify-end mt-8 lg:mt-0">
+              <div className="relative w-64 sm:w-80 md:w-96">
                 <img 
                   src="https://cdn.poehali.dev/projects/a5c90dd4-c760-4d2d-9991-4433d1bfb938/files/aa69f86a-4bb7-45f3-9b3b-0682b015f311.jpg" 
                   alt="Дети учатся программированию" 
-                  className="rounded-3xl shadow-2xl animate-scale-in w-full"
+                  className="rounded-2xl md:rounded-3xl shadow-2xl animate-scale-in w-full"
                 />
-                <div className="absolute -top-4 -right-4 w-20 h-20 bg-secondary rounded-full flex items-center justify-center text-3xl animate-float">
+                <div className="absolute -top-3 -right-3 md:-top-4 md:-right-4 w-16 h-16 md:w-20 md:h-20 bg-secondary rounded-full flex items-center justify-center text-2xl md:text-3xl animate-float">
                   🚀
                 </div>
               </div>
