@@ -21,7 +21,7 @@ export default function Index() {
   const [gameScore, setGameScore] = useState(0);
   const [birdY, setBirdY] = useState(50);
   const [birdVelocity, setBirdVelocity] = useState(0);
-  const [pipes, setPipes] = useState<{ id: number; x: number; gapY: number }[]>([]);
+  const [pipes, setPipes] = useState<{ id: number; x: number; gapY: number; scored: boolean }[]>([]);
   const [gameStarted, setGameStarted] = useState(false);
   const [gameOver, setGameOver] = useState(false);
 
@@ -44,73 +44,63 @@ export default function Index() {
       setGameStarted(false);
       return;
     }
-    if (!gameStarted) setGameStarted(true);
-    setBirdVelocity(-8);
+    if (!gameStarted) {
+      setGameStarted(true);
+    }
+    setBirdVelocity(-6);
   };
 
   useEffect(() => {
     if (!gameStarted || gameOver) return;
 
+    const gravity = 0.5;
     const gameLoop = setInterval(() => {
-      setBirdVelocity(v => {
-        const newVelocity = v + 0.6;
-        return newVelocity;
-      });
-    }, 50);
-
-    return () => clearInterval(gameLoop);
-  }, [gameStarted, gameOver]);
-
-  useEffect(() => {
-    if (!gameStarted || gameOver) return;
-
-    const updatePosition = setInterval(() => {
+      setBirdVelocity(v => v + gravity);
+      
       setBirdY(y => {
         const newY = y + birdVelocity;
-        if (newY > 88 || newY < 5) {
+        if (newY > 85 || newY < 0) {
           setGameOver(true);
           return y;
         }
         return newY;
       });
-    }, 50);
 
-    return () => clearInterval(updatePosition);
-  }, [gameStarted, gameOver, birdVelocity]);
-
-  useEffect(() => {
-    if (!gameStarted || gameOver) return;
-
-    const pipeLoop = setInterval(() => {
       setPipes(prev => {
         const newPipes = prev.map(p => ({ ...p, x: p.x - 2 })).filter(p => p.x > -15);
         
-        prev.forEach(pipe => {
+        newPipes.forEach(pipe => {
           if (pipe.x < 25 && pipe.x > 15) {
-            const birdTop = birdY;
-            const birdBottom = birdY + 8;
-            if (birdTop < pipe.gapY || birdBottom > pipe.gapY + 30) {
-              setGameOver(true);
-            }
+            setBirdY(currentY => {
+              const birdTop = currentY;
+              const birdBottom = currentY + 10;
+              if (birdTop < pipe.gapY - 2 || birdBottom > pipe.gapY + 32) {
+                setGameOver(true);
+              }
+              return currentY;
+            });
           }
-          if (pipe.x < 21 && pipe.x > 19) {
+          
+          if (pipe.x < 20 && !pipe.scored) {
+            pipe.scored = true;
             setGameScore(s => s + 1);
           }
         });
 
-        if (prev.length === 0 || prev[prev.length - 1].x < 70) {
+        if (newPipes.length === 0 || newPipes[newPipes.length - 1].x < 65) {
           newPipes.push({ 
             id: Date.now(), 
             x: 100, 
-            gapY: Math.random() * 35 + 25 
+            gapY: Math.random() * 40 + 20,
+            scored: false
           });
         }
         return newPipes;
       });
-    }, 50);
+    }, 30);
 
-    return () => clearInterval(pipeLoop);
-  }, [gameStarted, gameOver, birdY]);
+    return () => clearInterval(gameLoop);
+  }, [gameStarted, gameOver, birdVelocity]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-accent/30 font-open-sans">
