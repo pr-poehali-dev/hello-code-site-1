@@ -18,6 +18,9 @@ export default function Index() {
   });
 
   const [flippedCard, setFlippedCard] = useState<number | null>(null);
+  const [gameScore, setGameScore] = useState(0);
+  const [rocketPosition, setRocketPosition] = useState({ x: 50, y: 50 });
+  const [stars, setStars] = useState<{ id: number; x: number; y: number; emoji: string }[]>([]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,6 +30,40 @@ export default function Index() {
   const toggleCard = (index: number) => {
     setFlippedCard(flippedCard === index ? null : index);
   };
+
+  const spawnStar = () => {
+    const emojis = ['⭐', '🌟', '✨', '💫', '🎯', '🎨', '🎮', '🚀'];
+    const newStar = {
+      id: Date.now(),
+      x: Math.random() * 80 + 10,
+      y: Math.random() * 80 + 10,
+      emoji: emojis[Math.floor(Math.random() * emojis.length)]
+    };
+    setStars(prev => [...prev, newStar]);
+    setTimeout(() => {
+      setStars(prev => prev.filter(s => s.id !== newStar.id));
+    }, 3000);
+  };
+
+  const handleRocketMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    setRocketPosition({ x, y });
+
+    stars.forEach(star => {
+      const distance = Math.sqrt(Math.pow(star.x - x, 2) + Math.pow(star.y - y, 2));
+      if (distance < 10) {
+        setGameScore(prev => prev + 1);
+        setStars(prev => prev.filter(s => s.id !== star.id));
+      }
+    });
+  };
+
+  useState(() => {
+    const interval = setInterval(spawnStar, 2000);
+    return () => clearInterval(interval);
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-accent/30 font-open-sans">
@@ -94,14 +131,58 @@ export default function Index() {
               </div>
             </div>
             <div className="relative lg:mt-16 flex justify-center lg:justify-end mt-8 lg:mt-0">
-              <div className="relative w-64 sm:w-80 md:w-96">
-                <img 
-                  src="https://cdn.poehali.dev/projects/a5c90dd4-c760-4d2d-9991-4433d1bfb938/files/aa69f86a-4bb7-45f3-9b3b-0682b015f311.jpg" 
-                  alt="Дети учатся программированию" 
-                  className="rounded-2xl md:rounded-3xl shadow-2xl animate-scale-in w-full"
-                />
-                <div className="absolute -top-3 -right-3 md:-top-4 md:-right-4 w-16 h-16 md:w-20 md:h-20 bg-secondary rounded-full flex items-center justify-center text-2xl md:text-3xl animate-float">
-                  🚀
+              <div className="relative w-64 sm:w-80 md:w-96 h-64 sm:h-80 md:h-96">
+                <div 
+                  className="w-full h-full bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 rounded-2xl md:rounded-3xl shadow-2xl animate-scale-in overflow-hidden cursor-crosshair relative"
+                  onMouseMove={handleRocketMove}
+                  onClick={spawnStar}
+                >
+                  <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-lg text-white font-bold">
+                    Счёт: {gameScore}
+                  </div>
+                  
+                  <div className="absolute top-4 left-4 bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-lg text-white text-xs">
+                    Поймай звёзды! 🎯
+                  </div>
+
+                  {stars.map(star => (
+                    <div
+                      key={star.id}
+                      className="absolute text-2xl animate-pulse transition-all duration-300"
+                      style={{ 
+                        left: `${star.x}%`, 
+                        top: `${star.y}%`,
+                        transform: 'translate(-50%, -50%)'
+                      }}
+                    >
+                      {star.emoji}
+                    </div>
+                  ))}
+
+                  <div
+                    className="absolute text-3xl transition-all duration-150 ease-out"
+                    style={{ 
+                      left: `${rocketPosition.x}%`, 
+                      top: `${rocketPosition.y}%`,
+                      transform: 'translate(-50%, -50%)'
+                    }}
+                  >
+                    🚀
+                  </div>
+
+                  <div className="absolute inset-0 pointer-events-none">
+                    {[...Array(20)].map((_, i) => (
+                      <div
+                        key={i}
+                        className="absolute w-1 h-1 bg-white rounded-full animate-pulse"
+                        style={{
+                          left: `${Math.random() * 100}%`,
+                          top: `${Math.random() * 100}%`,
+                          animationDelay: `${Math.random() * 2}s`
+                        }}
+                      />
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
