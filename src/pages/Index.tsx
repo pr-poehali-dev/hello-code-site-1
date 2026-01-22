@@ -17,9 +17,15 @@ export default function Index() {
     comment: ''
   });
 
+  const [flippedCard, setFlippedCard] = useState<number | null>(null);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     alert('Спасибо! Мы свяжемся с вами в ближайшее время для подтверждения записи на пробный урок.');
+  };
+
+  const toggleCard = (index: number) => {
+    setFlippedCard(flippedCard === index ? null : index);
   };
 
   return (
@@ -154,7 +160,8 @@ export default function Index() {
                 icon: '🎨',
                 desc: 'Первые шаги в программировании через создание анимаций и простых игр',
                 duration: '24 урока',
-                level: 'Начинающие'
+                level: 'Начинающие',
+                details: 'Ребёнок научится создавать интерактивные истории, игры и анимации. Изучит основы алгоритмов, циклов и условий через визуальное программирование. Разовьёт логическое мышление и креативность. Создаст 6-8 собственных проектов.'
               },
               { 
                 title: 'Scratch Pro', 
@@ -162,7 +169,8 @@ export default function Index() {
                 icon: '🎮',
                 desc: 'Создание сложных игр, анимаций и интерактивных историй',
                 duration: '32 урока',
-                level: 'Начинающие'
+                level: 'Начинающие',
+                details: 'Углубленное изучение Scratch с созданием многоуровневых игр. Работа с переменными, списками, клонами. Создание собственных блоков и функций. Разработка 10+ проектов разной сложности с публикацией в сообществе Scratch.'
               },
               { 
                 title: 'Python Start', 
@@ -170,7 +178,8 @@ export default function Index() {
                 icon: '🐍',
                 desc: 'Изучаем настоящий язык программирования и создаем первые приложения',
                 duration: '36 уроков',
-                level: 'Средний'
+                level: 'Средний',
+                details: 'Изучение синтаксиса Python, переменных, функций, циклов и условий. Работа с библиотеками turtle и pygame. Создание консольных игр и графических приложений. Основы работы с файлами и данными. 8-10 практических проектов.'
               },
               { 
                 title: 'Веб-разработка', 
@@ -178,7 +187,8 @@ export default function Index() {
                 icon: '🌐',
                 desc: 'HTML, CSS, JavaScript — создаем настоящие веб-сайты',
                 duration: '40 уроков',
-                level: 'Средний'
+                level: 'Средний',
+                details: 'Полный цикл создания современных веб-сайтов. Вёрстка HTML5 и стилизация CSS3. Адаптивный дизайн и flexbox/grid. JavaScript для интерактивности. Работа с формами и API. Создание 5-7 реальных сайтов для портфолио.'
               },
               { 
                 title: 'Python Advanced', 
@@ -186,7 +196,8 @@ export default function Index() {
                 icon: '⚡',
                 desc: 'ООП, алгоритмы, работа с API и базами данных',
                 duration: '48 уроков',
-                level: 'Продвинутый'
+                level: 'Продвинутый',
+                details: 'Объектно-ориентированное программирование, классы и наследование. Работа с базами данных SQLite. Создание Telegram-ботов. REST API и парсинг данных. Алгоритмы сортировки и поиска. Разработка полноценных приложений с базой данных.'
               },
               { 
                 title: 'Game Dev', 
@@ -194,31 +205,88 @@ export default function Index() {
                 icon: '🎯',
                 desc: 'Создаем игры на Unity и изучаем C#',
                 duration: '52 урока',
-                level: 'Продвинутый'
+                level: 'Продвинутый',
+                details: 'Профессиональная разработка игр в Unity. Изучение C# и принципов геймдизайна. Работа с физикой, коллизиями, анимацией. Создание 2D и 3D игр. UI/UX для игр. Публикация игр в App Store и Google Play. Создание 4-5 полноценных игр.'
               }
             ].map((course, i) => (
-              <Card key={i} className="border-2 hover:shadow-xl transition-all hover:-translate-y-2 overflow-hidden">
-                <div className="h-2 bg-gradient-to-r from-primary to-secondary"></div>
-                <CardHeader>
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-5xl">{course.icon}</span>
-                    <Badge variant="secondary">{course.age}</Badge>
-                  </div>
-                  <CardTitle className="text-2xl font-montserrat">{course.title}</CardTitle>
-                  <CardDescription className="text-base">{course.desc}</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Icon name="Clock" size={16} />
-                    <span>{course.duration}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Icon name="BarChart" size={16} />
-                    <span>{course.level}</span>
-                  </div>
-                  <Button className="w-full mt-4">Узнать подробнее</Button>
-                </CardContent>
-              </Card>
+              <div key={i} className="perspective-1000">
+                <div 
+                  className={`relative w-full transition-transform duration-700 transform-style-3d ${
+                    flippedCard === i ? 'rotate-y-180' : ''
+                  }`}
+                  style={{ transformStyle: 'preserve-3d' }}
+                >
+                  <Card className={`border-2 hover:shadow-xl transition-all hover:-translate-y-2 overflow-hidden ${
+                    flippedCard === i ? 'invisible' : 'visible'
+                  }`}>
+                    <div className="h-2 bg-gradient-to-r from-primary to-secondary"></div>
+                    <CardHeader>
+                      <div className="flex items-center justify-between mb-4">
+                        <span className="text-5xl">{course.icon}</span>
+                        <Badge variant="secondary">{course.age}</Badge>
+                      </div>
+                      <CardTitle className="text-2xl font-montserrat">{course.title}</CardTitle>
+                      <CardDescription className="text-base">{course.desc}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Icon name="Clock" size={16} />
+                        <span>{course.duration}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Icon name="BarChart" size={16} />
+                        <span>{course.level}</span>
+                      </div>
+                      <Button className="w-full mt-4" onClick={() => toggleCard(i)}>
+                        Узнать подробнее
+                      </Button>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className={`border-2 overflow-hidden absolute top-0 left-0 w-full h-full ${
+                    flippedCard === i ? 'visible' : 'invisible'
+                  }`}
+                    style={{ transform: 'rotateY(180deg)', backfaceVisibility: 'hidden' }}
+                  >
+                    <div className="h-2 bg-gradient-to-r from-secondary to-primary"></div>
+                    <CardHeader>
+                      <div className="flex items-center justify-between mb-4">
+                        <CardTitle className="text-2xl font-montserrat">{course.title}</CardTitle>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => toggleCard(i)}
+                          className="hover:bg-accent"
+                        >
+                          <Icon name="X" size={20} />
+                        </Button>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <p className="text-sm leading-relaxed text-muted-foreground">
+                        {course.details}
+                      </p>
+                      <div className="space-y-2 pt-4 border-t">
+                        <div className="flex items-center gap-2 text-sm">
+                          <Icon name="Clock" size={16} className="text-primary" />
+                          <span className="font-semibold">{course.duration}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          <Icon name="BarChart" size={16} className="text-primary" />
+                          <span className="font-semibold">{course.level}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          <Icon name="Users" size={16} className="text-primary" />
+                          <span className="font-semibold">До 6 человек в группе</span>
+                        </div>
+                      </div>
+                      <Button className="w-full" onClick={() => toggleCard(i)}>
+                        Вернуться назад
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
             ))}
           </div>
         </div>
