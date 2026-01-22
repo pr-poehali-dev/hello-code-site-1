@@ -52,28 +52,48 @@ export default function Index() {
     if (!gameStarted || gameOver) return;
 
     const gameLoop = setInterval(() => {
-      setBirdVelocity(v => v + 0.6);
+      setBirdVelocity(v => {
+        const newVelocity = v + 0.6;
+        return newVelocity;
+      });
+    }, 50);
+
+    return () => clearInterval(gameLoop);
+  }, [gameStarted, gameOver]);
+
+  useEffect(() => {
+    if (!gameStarted || gameOver) return;
+
+    const updatePosition = setInterval(() => {
       setBirdY(y => {
         const newY = y + birdVelocity;
-        if (newY > 90 || newY < 5) {
+        if (newY > 88 || newY < 5) {
           setGameOver(true);
           return y;
         }
         return newY;
       });
+    }, 50);
 
+    return () => clearInterval(updatePosition);
+  }, [gameStarted, gameOver, birdVelocity]);
+
+  useEffect(() => {
+    if (!gameStarted || gameOver) return;
+
+    const pipeLoop = setInterval(() => {
       setPipes(prev => {
         const newPipes = prev.map(p => ({ ...p, x: p.x - 2 })).filter(p => p.x > -15);
         
         prev.forEach(pipe => {
-          if (pipe.x < 20 && pipe.x > 15) {
+          if (pipe.x < 25 && pipe.x > 15) {
             const birdTop = birdY;
             const birdBottom = birdY + 8;
             if (birdTop < pipe.gapY || birdBottom > pipe.gapY + 30) {
               setGameOver(true);
             }
           }
-          if (pipe.x === 50) {
+          if (pipe.x < 21 && pipe.x > 19) {
             setGameScore(s => s + 1);
           }
         });
@@ -82,15 +102,15 @@ export default function Index() {
           newPipes.push({ 
             id: Date.now(), 
             x: 100, 
-            gapY: Math.random() * 40 + 20 
+            gapY: Math.random() * 35 + 25 
           });
         }
         return newPipes;
       });
     }, 50);
 
-    return () => clearInterval(gameLoop);
-  }, [gameStarted, gameOver, birdVelocity, birdY]);
+    return () => clearInterval(pipeLoop);
+  }, [gameStarted, gameOver, birdY]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-accent/30 font-open-sans">
@@ -163,40 +183,6 @@ export default function Index() {
                   className="w-full h-full bg-gradient-to-b from-sky-400 to-sky-200 rounded-2xl md:rounded-3xl shadow-2xl animate-scale-in overflow-hidden cursor-pointer relative"
                   onClick={handleFlap}
                 >
-                  <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-lg font-bold text-foreground">
-                    Счёт: {gameScore}
-                  </div>
-                  
-                  {!gameStarted && !gameOver && (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="bg-white/90 backdrop-blur-sm px-6 py-4 rounded-xl text-center">
-                        <p className="font-bold text-lg mb-2">Flappy Code 🚀</p>
-                        <p className="text-sm text-muted-foreground">Кликни, чтобы играть!</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {gameOver && (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="bg-white/90 backdrop-blur-sm px-6 py-4 rounded-xl text-center">
-                        <p className="font-bold text-lg mb-2">Игра окончена! 💥</p>
-                        <p className="text-sm text-muted-foreground mb-2">Счёт: {gameScore}</p>
-                        <p className="text-xs text-muted-foreground">Кликни для перезапуска</p>
-                      </div>
-                    </div>
-                  )}
-
-                  <div
-                    className="absolute text-3xl transition-all duration-100"
-                    style={{ 
-                      left: '20%', 
-                      top: `${birdY}%`,
-                      transform: `translate(-50%, -50%) rotate(${birdVelocity * 3}deg)`
-                    }}
-                  >
-                    🚀
-                  </div>
-
                   {pipes.map(pipe => (
                     <div key={pipe.id}>
                       <div
@@ -219,6 +205,40 @@ export default function Index() {
                       />
                     </div>
                   ))}
+
+                  <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-lg font-bold text-foreground z-10">
+                    Счёт: {gameScore}
+                  </div>
+                  
+                  {!gameStarted && !gameOver && (
+                    <div className="absolute inset-0 flex items-center justify-center z-20">
+                      <div className="bg-white/90 backdrop-blur-sm px-6 py-4 rounded-xl text-center">
+                        <p className="font-bold text-lg mb-2">Flappy Code 🐦</p>
+                        <p className="text-sm text-muted-foreground">Кликни, чтобы играть!</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {gameOver && (
+                    <div className="absolute inset-0 flex items-center justify-center z-20">
+                      <div className="bg-white/90 backdrop-blur-sm px-6 py-4 rounded-xl text-center">
+                        <p className="font-bold text-lg mb-2">Игра окончена! 💥</p>
+                        <p className="text-sm text-muted-foreground mb-2">Счёт: {gameScore}</p>
+                        <p className="text-xs text-muted-foreground">Кликни для перезапуска</p>
+                      </div>
+                    </div>
+                  )}
+
+                  <div
+                    className="absolute text-3xl transition-all duration-100 z-10"
+                    style={{ 
+                      left: '20%', 
+                      top: `${birdY}%`,
+                      transform: `translate(-50%, -50%) rotate(${birdVelocity * 3}deg)`
+                    }}
+                  >
+                    🐦
+                  </div>
 
                   <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-green-800 to-green-600" />
                   
