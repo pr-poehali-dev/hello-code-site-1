@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -48,7 +48,7 @@ export default function Index() {
     setBirdVelocity(-8);
   };
 
-  useState(() => {
+  useEffect(() => {
     if (!gameStarted || gameOver) return;
 
     const gameLoop = setInterval(() => {
@@ -90,7 +90,7 @@ export default function Index() {
     }, 50);
 
     return () => clearInterval(gameLoop);
-  });
+  }, [gameStarted, gameOver, birdVelocity, birdY]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-accent/30 font-open-sans">
