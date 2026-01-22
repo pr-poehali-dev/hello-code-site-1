@@ -87,14 +87,16 @@ export default function Index() {
                 </div>
               </div>
             </div>
-            <div className="relative lg:mt-16">
-              <img 
-                src="https://cdn.poehali.dev/projects/a5c90dd4-c760-4d2d-9991-4433d1bfb938/files/aa69f86a-4bb7-45f3-9b3b-0682b015f311.jpg" 
-                alt="Дети учатся программированию" 
-                className="rounded-3xl shadow-2xl animate-scale-in max-w-md mx-auto"
-              />
-              <div className="absolute -top-4 -right-4 w-24 h-24 bg-secondary rounded-full flex items-center justify-center text-4xl animate-float">
-                🚀
+            <div className="relative lg:mt-16 flex justify-center lg:justify-end">
+              <div className="relative w-80 md:w-96">
+                <img 
+                  src="https://cdn.poehali.dev/projects/a5c90dd4-c760-4d2d-9991-4433d1bfb938/files/aa69f86a-4bb7-45f3-9b3b-0682b015f311.jpg" 
+                  alt="Дети учатся программированию" 
+                  className="rounded-3xl shadow-2xl animate-scale-in w-full"
+                />
+                <div className="absolute -top-4 -right-4 w-20 h-20 bg-secondary rounded-full flex items-center justify-center text-3xl animate-float">
+                  🚀
+                </div>
               </div>
             </div>
           </div>
