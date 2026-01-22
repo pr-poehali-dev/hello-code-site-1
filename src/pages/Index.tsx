@@ -209,26 +209,26 @@ export default function Index() {
                 details: 'Профессиональная разработка игр в Unity. Изучение C# и принципов геймдизайна. Работа с физикой, коллизиями, анимацией. Создание 2D и 3D игр. UI/UX для игр. Публикация игр в App Store и Google Play. Создание 4-5 полноценных игр.'
               }
             ].map((course, i) => (
-              <div key={i} className="perspective-1000">
+              <div key={i} className="perspective-1000 h-full">
                 <div 
-                  className={`relative w-full transition-transform duration-700 transform-style-3d ${
+                  className={`relative w-full h-full transition-transform duration-700 transform-style-3d ${
                     flippedCard === i ? 'rotate-y-180' : ''
                   }`}
-                  style={{ transformStyle: 'preserve-3d' }}
+                  style={{ transformStyle: 'preserve-3d', minHeight: '460px' }}
                 >
-                  <Card className={`border-2 hover:shadow-xl transition-all hover:-translate-y-2 overflow-hidden ${
+                  <Card className={`border-2 hover:shadow-xl transition-all hover:-translate-y-2 overflow-hidden flex flex-col h-full ${
                     flippedCard === i ? 'invisible' : 'visible'
                   }`}>
                     <div className="h-2 bg-gradient-to-r from-primary to-secondary"></div>
-                    <CardHeader>
+                    <CardHeader className="flex-grow">
                       <div className="flex items-center justify-between mb-4">
                         <span className="text-5xl">{course.icon}</span>
                         <Badge variant="secondary">{course.age}</Badge>
                       </div>
                       <CardTitle className="text-2xl font-montserrat">{course.title}</CardTitle>
-                      <CardDescription className="text-base">{course.desc}</CardDescription>
+                      <CardDescription className="text-base min-h-[48px]">{course.desc}</CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-3">
+                    <CardContent className="space-y-3 mt-auto">
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Icon name="Clock" size={16} />
                         <span>{course.duration}</span>
@@ -243,44 +243,44 @@ export default function Index() {
                     </CardContent>
                   </Card>
                   
-                  <Card className={`border-2 overflow-hidden absolute top-0 left-0 w-full h-full ${
+                  <Card className={`border-2 overflow-y-auto absolute top-0 left-0 w-full h-full flex flex-col ${
                     flippedCard === i ? 'visible' : 'invisible'
                   }`}
                     style={{ transform: 'rotateY(180deg)', backfaceVisibility: 'hidden' }}
                   >
                     <div className="h-2 bg-gradient-to-r from-secondary to-primary"></div>
-                    <CardHeader>
-                      <div className="flex items-center justify-between mb-4">
-                        <CardTitle className="text-2xl font-montserrat">{course.title}</CardTitle>
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-xl font-montserrat pr-2">{course.title}</CardTitle>
                         <Button 
                           variant="ghost" 
                           size="icon" 
                           onClick={() => toggleCard(i)}
-                          className="hover:bg-accent"
+                          className="hover:bg-accent flex-shrink-0"
                         >
                           <Icon name="X" size={20} />
                         </Button>
                       </div>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                      <p className="text-sm leading-relaxed text-muted-foreground">
+                    <CardContent className="space-y-3 flex-grow pb-6">
+                      <p className="text-xs leading-relaxed text-muted-foreground">
                         {course.details}
                       </p>
-                      <div className="space-y-2 pt-4 border-t">
-                        <div className="flex items-center gap-2 text-sm">
-                          <Icon name="Clock" size={16} className="text-primary" />
+                      <div className="space-y-1.5 pt-2 border-t">
+                        <div className="flex items-center gap-2 text-xs">
+                          <Icon name="Clock" size={14} className="text-primary" />
                           <span className="font-semibold">{course.duration}</span>
                         </div>
-                        <div className="flex items-center gap-2 text-sm">
-                          <Icon name="BarChart" size={16} className="text-primary" />
+                        <div className="flex items-center gap-2 text-xs">
+                          <Icon name="BarChart" size={14} className="text-primary" />
                           <span className="font-semibold">{course.level}</span>
                         </div>
-                        <div className="flex items-center gap-2 text-sm">
-                          <Icon name="Users" size={16} className="text-primary" />
+                        <div className="flex items-center gap-2 text-xs">
+                          <Icon name="Users" size={14} className="text-primary" />
                           <span className="font-semibold">До 6 человек в группе</span>
                         </div>
                       </div>
-                      <Button className="w-full" onClick={() => toggleCard(i)}>
+                      <Button className="w-full mt-3" onClick={() => toggleCard(i)} size="sm">
                         Вернуться назад
                       </Button>
                     </CardContent>
