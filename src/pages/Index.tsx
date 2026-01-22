@@ -89,7 +89,7 @@ export default function Index() {
             </div>
             <div className="relative">
               <img 
-                src="https://cdn.poehali.dev/projects/a5c90dd4-c760-4d2d-9991-4433d1bfb938/files/34e18257-ff73-49e9-b5a2-b47abe522534.jpg" 
+                src="https://cdn.poehali.dev/projects/a5c90dd4-c760-4d2d-9991-4433d1bfb938/files/aa69f86a-4bb7-45f3-9b3b-0682b015f311.jpg" 
                 alt="Дети учатся программированию" 
                 className="rounded-3xl shadow-2xl animate-scale-in"
               />
