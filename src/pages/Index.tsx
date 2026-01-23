@@ -21,6 +21,7 @@ export default function Index() {
   const [memoryCards, setMemoryCards] = useState<{id: number, emoji: string, flipped: boolean, matched: boolean}[]>([]);
   const [flippedIndices, setFlippedIndices] = useState<number[]>([]);
   const [memoryScore, setMemoryScore] = useState(0);
+  const [flippedCourse, setFlippedCourse] = useState<number | null>(null);
   
   const [snakeGame, setSnakeGame] = useState({
     snake: [{x: 10, y: 10}],
@@ -161,28 +162,60 @@ export default function Index() {
       age: '5-7 лет',
       icon: 'Palette',
       color: 'from-pink-500 to-rose-500',
-      description: 'Создание первых анимаций и игр'
+      description: 'Создание первых анимаций и игр',
+      details: [
+        '🎨 Визуальное программирование',
+        '🎮 Создание простых игр',
+        '🎬 Анимированные истории',
+        '⏱ Занятия по 45 минут',
+        '👥 Группы до 4 человек',
+        '📅 2 раза в неделю'
+      ]
     },
     {
       title: 'Scratch',
       age: '8-10 лет',
       icon: 'Gamepad2',
       color: 'from-purple-500 to-indigo-500',
-      description: 'Разработка игр и интерактивных историй'
+      description: 'Разработка игр и интерактивных историй',
+      details: [
+        '🎯 Сложные игровые механики',
+        '🔧 Работа с переменными',
+        '🎨 Дизайн персонажей',
+        '⏱ Занятия по 60 минут',
+        '👥 Группы до 6 человек',
+        '📅 2 раза в неделю'
+      ]
     },
     {
       title: 'Python',
       age: '11-14 лет',
       icon: 'Code2',
       color: 'from-blue-500 to-cyan-500',
-      description: 'Настоящее программирование на Python'
+      description: 'Настоящее программирование на Python',
+      details: [
+        '💻 Синтаксис Python',
+        '🔢 Алгоритмы и структуры данных',
+        '🎮 Игры с Pygame',
+        '⏱ Занятия по 90 минут',
+        '👥 Группы до 6 человек',
+        '📅 2 раза в неделю'
+      ]
     },
     {
       title: 'Web-разработка',
       age: '13-17 лет',
       icon: 'Globe',
       color: 'from-green-500 to-emerald-500',
-      description: 'Создание сайтов на HTML, CSS, JavaScript'
+      description: 'Создание сайтов на HTML, CSS, JavaScript',
+      details: [
+        '🌐 HTML5 и CSS3',
+        '⚡ JavaScript и React',
+        '📱 Адаптивный дизайн',
+        '⏱ Занятия по 90 минут',
+        '👥 Группы до 6 человек',
+        '📅 2 раза в неделю'
+      ]
     }
   ];
 
@@ -382,21 +415,59 @@ export default function Index() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {courses.map((course, index) => (
-              <Card key={index} className="overflow-hidden hover:shadow-2xl transition-all hover:-translate-y-2">
-                <div className={`h-32 bg-gradient-to-br ${course.color} flex items-center justify-center`}>
-                  <Icon name={course.icon as any} size={48} className="text-white" />
+              <div key={index} className="perspective-1000 h-[420px]">
+                <div
+                  className={`relative w-full h-full transform-style-3d transition-transform duration-700 ${
+                    flippedCourse === index ? '[transform:rotateY(180deg)]' : ''
+                  }`}
+                >
+                  {/* Front */}
+                  <Card className="absolute inset-0 backface-hidden overflow-hidden hover:shadow-2xl">
+                    <div className={`h-32 bg-gradient-to-br ${course.color} flex items-center justify-center`}>
+                      <Icon name={course.icon as any} size={48} className="text-white" />
+                    </div>
+                    <CardHeader>
+                      <Badge className="w-fit mb-2">{course.age}</Badge>
+                      <CardTitle>{course.title}</CardTitle>
+                      <CardDescription>{course.description}</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => setFlippedCourse(index)}
+                      >
+                        Подробнее →
+                      </Button>
+                    </CardContent>
+                  </Card>
+
+                  {/* Back */}
+                  <Card className="absolute inset-0 backface-hidden [transform:rotateY(180deg)] overflow-hidden">
+                    <div className={`h-32 bg-gradient-to-br ${course.color} flex items-center justify-center`}>
+                      <Icon name={course.icon as any} size={48} className="text-white" />
+                    </div>
+                    <CardHeader>
+                      <Badge className="w-fit mb-2">{course.age}</Badge>
+                      <CardTitle className="text-lg">{course.title}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      {course.details.map((detail, i) => (
+                        <p key={i} className="text-sm text-gray-700">
+                          {detail}
+                        </p>
+                      ))}
+                      <Button
+                        variant="outline"
+                        className="w-full mt-4"
+                        onClick={() => setFlippedCourse(null)}
+                      >
+                        ← Назад
+                      </Button>
+                    </CardContent>
+                  </Card>
                 </div>
-                <CardHeader>
-                  <Badge className="w-fit mb-2">{course.age}</Badge>
-                  <CardTitle>{course.title}</CardTitle>
-                  <CardDescription>{course.description}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Button variant="outline" className="w-full">
-                    Подробнее →
-                  </Button>
-                </CardContent>
-              </Card>
+              </div>
             ))}
           </div>
         </div>
