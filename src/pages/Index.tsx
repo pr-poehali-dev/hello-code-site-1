@@ -13,759 +13,536 @@ export default function Index() {
     childName: '',
     childAge: '',
     phone: '',
-    email: '',
-    comment: ''
+    email: ''
   });
 
-  const [flippedCard, setFlippedCard] = useState<number | null>(null);
-  const [gameScore, setGameScore] = useState(0);
-  const [ballY, setBallY] = useState(50);
-  const [ballVelocity, setBallVelocity] = useState(0);
-  const [obstacles, setObstacles] = useState<{ id: number; x: number; height: number; scored: boolean }[]>([]);
-  const [gameStarted, setGameStarted] = useState(false);
-  const [gameOver, setGameOver] = useState(false);
+  const [codeLines, setCodeLines] = useState(0);
+  const [typingText, setTypingText] = useState('');
+  const [memoryCards, setMemoryCards] = useState<{id: number, emoji: string, flipped: boolean, matched: boolean}[]>([]);
+  const [flippedIndices, setFlippedIndices] = useState<number[]>([]);
+  const [memoryScore, setMemoryScore] = useState(0);
+  
+  const [snakeGame, setSnakeGame] = useState({
+    snake: [{x: 10, y: 10}],
+    food: {x: 15, y: 15},
+    direction: {x: 0, y: 0},
+    score: 0,
+    gameOver: false,
+    started: false
+  });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    alert('Спасибо! Мы свяжемся с вами в ближайшее время для подтверждения записи на пробный урок.');
+  const codeExample = `function createGame() {
+  const player = new Player();
+  const world = new World();
+  
+  while (game.isRunning) {
+    player.move();
+    world.update();
+    render();
+  }
+}`;
+
+  useEffect(() => {
+    if (codeLines < codeExample.length) {
+      const timer = setTimeout(() => {
+        setCodeLines(prev => prev + 1);
+        setTypingText(codeExample.slice(0, codeLines + 1));
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [codeLines]);
+
+  useEffect(() => {
+    const emojis = ['🎮', '🚀', '🎨', '💻', '🤖', '🌟', '🎯', '🏆'];
+    const shuffled = [...emojis, ...emojis]
+      .sort(() => Math.random() - 0.5)
+      .map((emoji, id) => ({id, emoji, flipped: false, matched: false}));
+    setMemoryCards(shuffled);
+  }, []);
+
+  const handleCardClick = (index: number) => {
+    if (flippedIndices.length === 2 || memoryCards[index].flipped || memoryCards[index].matched) return;
+    
+    const newCards = [...memoryCards];
+    newCards[index].flipped = true;
+    setMemoryCards(newCards);
+    
+    const newFlipped = [...flippedIndices, index];
+    setFlippedIndices(newFlipped);
+    
+    if (newFlipped.length === 2) {
+      const [first, second] = newFlipped;
+      if (newCards[first].emoji === newCards[second].emoji) {
+        newCards[first].matched = true;
+        newCards[second].matched = true;
+        setMemoryScore(prev => prev + 1);
+        setFlippedIndices([]);
+      } else {
+        setTimeout(() => {
+          newCards[first].flipped = false;
+          newCards[second].flipped = false;
+          setMemoryCards([...newCards]);
+          setFlippedIndices([]);
+        }, 600);
+      }
+    }
   };
 
-  const toggleCard = (index: number) => {
-    setFlippedCard(flippedCard === index ? null : index);
-  };
-
-  const handleJump = () => {
-    if (gameOver) {
-      setBallY(50);
-      setBallVelocity(0);
-      setObstacles([]);
-      setGameScore(0);
-      setGameOver(false);
-      setGameStarted(false);
-      return;
+  const handleSnakeKeyPress = (e: React.KeyboardEvent) => {
+    const {direction} = snakeGame;
+    if (e.key === 'ArrowUp' && direction.y === 0) {
+      setSnakeGame(prev => ({...prev, direction: {x: 0, y: -1}, started: true}));
+    } else if (e.key === 'ArrowDown' && direction.y === 0) {
+      setSnakeGame(prev => ({...prev, direction: {x: 0, y: 1}, started: true}));
+    } else if (e.key === 'ArrowLeft' && direction.x === 0) {
+      setSnakeGame(prev => ({...prev, direction: {x: -1, y: 0}, started: true}));
+    } else if (e.key === 'ArrowRight' && direction.x === 0) {
+      setSnakeGame(prev => ({...prev, direction: {x: 1, y: 0}, started: true}));
     }
-    if (!gameStarted) {
-      setGameStarted(true);
-    }
-    setBallVelocity(-5);
   };
 
   useEffect(() => {
-    if (!gameStarted || gameOver) return;
-
-    const gravity = 0.3;
-    const groundLevel = 75;
+    if (!snakeGame.started || snakeGame.gameOver) return;
     
     const gameLoop = setInterval(() => {
-      setBallVelocity(v => v + gravity);
-      
-      setBallY(y => {
-        const newY = y + ballVelocity;
-        if (newY > groundLevel) {
-          return groundLevel;
-        }
-        if (newY < 5) {
-          return 5;
-        }
-        return newY;
-      });
-
-      setObstacles(prev => {
-        const newObstacles = prev.map(o => ({ ...o, x: o.x - 1.2 })).filter(o => o.x > -10);
+      setSnakeGame(prev => {
+        const head = prev.snake[0];
+        const newHead = {
+          x: head.x + prev.direction.x,
+          y: head.y + prev.direction.y
+        };
         
-        newObstacles.forEach(obstacle => {
-          if (obstacle.x < 25 && obstacle.x > 10) {
-            setBallY(currentY => {
-              const ballBottom = currentY + 6;
-              if (ballBottom > groundLevel - obstacle.height + 3) {
-                setGameOver(true);
-              }
-              return currentY;
-            });
-          }
-          
-          if (obstacle.x < 15 && !obstacle.scored) {
-            obstacle.scored = true;
-            setGameScore(s => s + 1);
-          }
-        });
-
-        if (newObstacles.length === 0 || newObstacles[newObstacles.length - 1].x < 75) {
-          newObstacles.push({ 
-            id: Date.now(), 
-            x: 100,
-            height: Math.random() * 12 + 8,
-            scored: false
-          });
+        if (newHead.x < 0 || newHead.x >= 20 || newHead.y < 0 || newHead.y >= 20 ||
+            prev.snake.some(segment => segment.x === newHead.x && segment.y === newHead.y)) {
+          return {...prev, gameOver: true};
         }
-        return newObstacles;
+        
+        const newSnake = [newHead, ...prev.snake];
+        
+        if (newHead.x === prev.food.x && newHead.y === prev.food.y) {
+          return {
+            ...prev,
+            snake: newSnake,
+            food: {
+              x: Math.floor(Math.random() * 20),
+              y: Math.floor(Math.random() * 20)
+            },
+            score: prev.score + 1
+          };
+        } else {
+          newSnake.pop();
+          return {...prev, snake: newSnake};
+        }
       });
-    }, 30);
-
+    }, 150);
+    
     return () => clearInterval(gameLoop);
-  }, [gameStarted, gameOver, ballVelocity]);
+  }, [snakeGame.started, snakeGame.gameOver, snakeGame.direction]);
+
+  const resetSnakeGame = () => {
+    setSnakeGame({
+      snake: [{x: 10, y: 10}],
+      food: {x: 15, y: 15},
+      direction: {x: 0, y: 0},
+      score: 0,
+      gameOver: false,
+      started: false
+    });
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    alert('Спасибо! Мы свяжемся с вами в ближайшее время.');
+  };
+
+  const courses = [
+    {
+      title: 'Scratch Junior',
+      age: '5-7 лет',
+      icon: 'Palette',
+      color: 'from-pink-500 to-rose-500',
+      description: 'Создание первых анимаций и игр'
+    },
+    {
+      title: 'Scratch',
+      age: '8-10 лет',
+      icon: 'Gamepad2',
+      color: 'from-purple-500 to-indigo-500',
+      description: 'Разработка игр и интерактивных историй'
+    },
+    {
+      title: 'Python',
+      age: '11-14 лет',
+      icon: 'Code2',
+      color: 'from-blue-500 to-cyan-500',
+      description: 'Настоящее программирование на Python'
+    },
+    {
+      title: 'Web-разработка',
+      age: '13-17 лет',
+      icon: 'Globe',
+      color: 'from-green-500 to-emerald-500',
+      description: 'Создание сайтов на HTML, CSS, JavaScript'
+    }
+  ];
+
+  const features = [
+    {
+      icon: 'Users',
+      title: 'Малые группы',
+      description: 'До 6 человек для максимального внимания'
+    },
+    {
+      icon: 'Trophy',
+      title: 'Геймификация',
+      description: 'Система достижений и наград'
+    },
+    {
+      icon: 'Lightbulb',
+      title: 'Свои проекты',
+      description: 'Ребёнок создаёт игры по своим идеям'
+    },
+    {
+      icon: 'Clock',
+      title: 'Удобное время',
+      description: 'Занятия в выходные и после школы'
+    }
+  ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-accent/30 font-open-sans">
-      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b shadow-sm">
-        <nav className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center text-white font-bold text-xl">
-              {'</>'}
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
+      {/* Hero Section */}
+      <section className="relative overflow-hidden py-20 px-4">
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0zNiAxOGMzLjMxNCAwIDYgMi42ODYgNiA2cy0yLjY4NiA2LTYgNi02LTIuNjg2LTYtNiAyLjY4Ni02IDYtNnoiIHN0cm9rZT0iIzhiNWNmNiIgb3BhY2l0eT0iLjIiLz48L2c+PC9zdmc+')] opacity-40"></div>
+        
+        <div className="max-w-7xl mx-auto relative z-10">
+          <div className="text-center mb-12">
+            <Badge className="mb-4 text-lg px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600">
+              🚀 Hello Code
+            </Badge>
+            <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 bg-clip-text text-transparent">
+              Программирование<br/>для детей
+            </h1>
+            <p className="text-xl md:text-2xl text-gray-700 mb-8 max-w-3xl mx-auto">
+              Превратим увлечение играми в создание собственных проектов!<br/>
+              Обучаем детей от 5 до 17 лет онлайн
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button size="lg" className="text-lg px-8 py-6 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
+                Записаться на пробный урок 🎁
+              </Button>
+              <Button size="lg" variant="outline" className="text-lg px-8 py-6">
+                Посмотреть программы
+              </Button>
             </div>
-            <span className="text-2xl font-montserrat font-bold text-foreground">Hello Code</span>
           </div>
-          <div className="hidden md:flex items-center gap-8">
-            <a href="#about" className="text-foreground hover:text-primary transition-colors">О школе</a>
-            <a href="#courses" className="text-foreground hover:text-primary transition-colors">Курсы</a>
-            <a href="#teachers" className="text-foreground hover:text-primary transition-colors">Преподаватели</a>
-            <a href="#success" className="text-foreground hover:text-primary transition-colors">Успехи</a>
-            <a href="#reviews" className="text-foreground hover:text-primary transition-colors">Отзывы</a>
-            <a href="#contact" className="text-foreground hover:text-primary transition-colors">Контакты</a>
-          </div>
-          <Button size="lg" className="hidden md:flex">
-            <a href="#trial">Записаться на урок</a>
-          </Button>
-          <Button size="icon" variant="ghost" className="md:hidden">
-            <Icon name="Menu" size={24} />
-          </Button>
-        </nav>
-      </header>
 
-      <section className="relative overflow-hidden py-12 md:py-20 lg:py-32">
-        <div className="container mx-auto px-4">
-          <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-start">
-            <div className="space-y-6 md:space-y-8 animate-fade-in lg:pt-8">
-              <Badge className="text-sm md:text-base px-3 py-1.5 md:px-4 md:py-2 bg-secondary text-white">
-                🎁 Первый урок БЕСПЛАТНО!
-              </Badge>
-              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-montserrat font-extrabold text-foreground leading-tight">
-                Программирование для детей
-                <span className="text-primary"> онлайн</span>
-              </h1>
-              <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-muted-foreground">
-                Обучаем детей от 7 до 16 лет создавать игры, сайты и приложения. 
-                Развиваем логику, креативность и навыки будущего!
-              </p>
-              <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
-                <Button size="lg" className="text-base md:text-lg px-6 py-5 md:px-8 md:py-6 bg-gradient-to-r from-primary to-secondary hover:opacity-90 w-full sm:w-auto">
-                  <a href="#trial">Записаться на бесплатный урок</a>
-                </Button>
-                <Button size="lg" variant="outline" className="text-base md:text-lg px-6 py-5 md:px-8 md:py-6 w-full sm:w-auto">
-                  <a href="#courses">Выбрать курс</a>
-                </Button>
-              </div>
-              <div className="flex flex-wrap gap-4 md:gap-6 lg:gap-8 pt-2 md:pt-4">
-                <div className="flex items-center gap-2">
-                  <Icon name="Users" size={20} className="text-primary md:w-6 md:h-6" />
-                  <span className="text-sm md:text-base lg:text-lg font-semibold">2000+ учеников</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Icon name="Award" size={20} className="text-secondary md:w-6 md:h-6" />
-                  <span className="text-sm md:text-base lg:text-lg font-semibold">5 лет опыта</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Icon name="Star" size={20} className="text-secondary md:w-6 md:h-6" />
-                  <span className="text-sm md:text-base lg:text-lg font-semibold">4.9/5 рейтинг</span>
-                </div>
-              </div>
+          {/* Code Animation */}
+          <div className="max-w-2xl mx-auto bg-gray-900 rounded-xl p-6 shadow-2xl mb-8">
+            <div className="flex gap-2 mb-4">
+              <div className="w-3 h-3 rounded-full bg-red-500"></div>
+              <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+              <div className="w-3 h-3 rounded-full bg-green-500"></div>
             </div>
-            <div className="relative lg:mt-32 flex justify-center lg:justify-end mt-8 lg:mt-0">
-              <div className="relative w-64 sm:w-80 md:w-96 h-64 sm:h-80 md:h-96">
-                <div 
-                  className="w-full h-full bg-gradient-to-b from-purple-400 via-pink-300 to-orange-200 rounded-2xl md:rounded-3xl shadow-2xl animate-scale-in overflow-hidden cursor-pointer relative"
-                  onClick={handleJump}
-                >
-                  <div className="absolute bottom-0 left-0 right-0 h-[25%] bg-gradient-to-t from-purple-800 to-purple-600 border-t-4 border-purple-900" />
+            <pre className="text-green-400 font-mono text-sm overflow-hidden">
+              {typingText}
+              <span className="animate-pulse">|</span>
+            </pre>
+          </div>
 
-                  {obstacles.map(obstacle => (
-                    <div
-                      key={obstacle.id}
-                      className="absolute bg-gradient-to-r from-red-600 to-red-500 border-4 border-red-700 rounded-t-lg z-10"
-                      style={{
-                        left: `${obstacle.x}%`,
-                        bottom: '25%',
-                        width: '8%',
-                        height: `${obstacle.height}%`
-                      }}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+            <Card className="text-center hover:shadow-xl transition-all hover:-translate-y-1">
+              <CardHeader>
+                <div className="text-5xl mb-2">👨‍👩‍👧‍👦</div>
+                <CardTitle>500+</CardTitle>
+                <CardDescription>Довольных родителей</CardDescription>
+              </CardHeader>
+            </Card>
+            <Card className="text-center hover:shadow-xl transition-all hover:-translate-y-1">
+              <CardHeader>
+                <div className="text-5xl mb-2">🎮</div>
+                <CardTitle>1000+</CardTitle>
+                <CardDescription>Созданных игр</CardDescription>
+              </CardHeader>
+            </Card>
+            <Card className="text-center hover:shadow-xl transition-all hover:-translate-y-1">
+              <CardHeader>
+                <div className="text-5xl mb-2">⭐</div>
+                <CardTitle>4.9/5</CardTitle>
+                <CardDescription>Рейтинг школы</CardDescription>
+              </CardHeader>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Mini Games Section */}
+      <section className="py-20 px-4 bg-white/50 backdrop-blur">
+        <div className="max-w-7xl mx-auto">
+          <h2 className="text-4xl md:text-5xl font-bold text-center mb-4 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+            Попробуй игры прямо сейчас! 🎮
+          </h2>
+          <p className="text-center text-gray-600 mb-12 text-lg">
+            Такие игры создают наши ученики на курсах
+          </p>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Memory Game */}
+            <Card className="overflow-hidden">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Icon name="Brain" size={24} />
+                  Найди пару
+                </CardTitle>
+                <CardDescription>Очки: {memoryScore} / 8</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-4 gap-3">
+                  {memoryCards.map((card, index) => (
+                    <button
+                      key={card.id}
+                      onClick={() => handleCardClick(index)}
+                      className={`aspect-square rounded-lg text-3xl flex items-center justify-center transition-all transform hover:scale-105 ${
+                        card.flipped || card.matched
+                          ? 'bg-gradient-to-br from-purple-400 to-pink-400 rotate-0'
+                          : 'bg-gradient-to-br from-gray-300 to-gray-400 rotate-y-180'
+                      } ${card.matched ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                     >
-                      <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 text-lg">
-                        ⚠️
-                      </div>
-                    </div>
-                  ))}
-
-                  <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-lg font-bold text-foreground z-10">
-                    Счёт: {gameScore}
-                  </div>
-                  
-                  {!gameStarted && !gameOver && (
-                    <div className="absolute inset-0 flex items-center justify-center z-20">
-                      <div className="bg-white/90 backdrop-blur-sm px-6 py-4 rounded-xl text-center">
-                        <p className="font-bold text-lg mb-2">Прыгун 🏀</p>
-                        <p className="text-sm text-muted-foreground">Кликай для прыжка!</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {gameOver && (
-                    <div className="absolute inset-0 flex items-center justify-center z-20">
-                      <div className="bg-white/90 backdrop-blur-sm px-6 py-4 rounded-xl text-center">
-                        <p className="font-bold text-lg mb-2">Игра окончена! 💥</p>
-                        <p className="text-sm text-muted-foreground mb-2">Счёт: {gameScore}</p>
-                        <p className="text-xs text-muted-foreground">Кликни для перезапуска</p>
-                      </div>
-                    </div>
-                  )}
-
-                  <div
-                    className="absolute text-4xl z-10 transition-all duration-100"
-                    style={{ 
-                      left: '20%', 
-                      top: `${ballY}%`,
-                      transform: 'translate(-50%, -50%)'
-                    }}
-                  >
-                    🏀
-                  </div>
-                  
-                  {[...Array(8)].map((_, i) => (
-                    <div
-                      key={i}
-                      className="absolute w-6 h-6 bg-white/20 rounded-full animate-pulse"
-                      style={{
-                        left: `${10 + i * 12}%`,
-                        top: `${30 + Math.sin(i * 0.5) * 15}%`,
-                        animationDelay: `${i * 0.2}s`
-                      }}
-                    />
+                      {(card.flipped || card.matched) && card.emoji}
+                    </button>
                   ))}
                 </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+              </CardContent>
+            </Card>
 
-      <section id="about" className="py-20 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-montserrat font-bold text-foreground mb-4">
-              Почему выбирают Hello Code?
-            </h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Мы создали уникальную методику обучения, которая делает программирование понятным и увлекательным
-            </p>
-          </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {[
-              { icon: 'Gamepad2', title: 'Игровой формат', desc: 'Учимся через создание игр и интересных проектов', color: 'text-primary' },
-              { icon: 'Users', title: 'Малые группы', desc: 'До 6 человек в группе — внимание каждому ученику', color: 'text-secondary' },
-              { icon: 'Clock', title: 'Гибкое расписание', desc: 'Выбирайте удобное время для занятий', color: 'text-primary' },
-              { icon: 'Trophy', title: 'Реальные проекты', desc: 'Портфолио из собственных игр и приложений', color: 'text-secondary' }
-            ].map((item, i) => (
-              <Card key={i} className="border-2 hover:shadow-lg transition-all hover:-translate-y-1">
-                <CardHeader>
-                  <div className={`w-16 h-16 rounded-2xl bg-accent flex items-center justify-center mb-4 ${item.color}`}>
-                    <Icon name={item.icon} size={32} />
-                  </div>
-                  <CardTitle className="text-xl font-montserrat">{item.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription className="text-base">{item.desc}</CardDescription>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section id="courses" className="py-20 bg-gradient-to-b from-accent/20 to-white">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-montserrat font-bold text-foreground mb-4">
-              Наши курсы
-            </h2>
-            <p className="text-xl text-muted-foreground">
-              Программы для всех возрастов и уровней подготовки
-            </p>
-          </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[
-              { 
-                title: 'Scratch Junior', 
-                age: '7-9 лет', 
-                icon: '🎨',
-                desc: 'Первые шаги в программировании через создание анимаций и простых игр',
-                duration: '24 урока',
-                level: 'Начинающие',
-                details: 'Ребёнок научится создавать интерактивные истории, игры и анимации. Изучит основы алгоритмов, циклов и условий через визуальное программирование. Разовьёт логическое мышление и креативность. Создаст 6-8 собственных проектов.'
-              },
-              { 
-                title: 'Scratch Pro', 
-                age: '9-12 лет', 
-                icon: '🎮',
-                desc: 'Создание сложных игр, анимаций и интерактивных историй',
-                duration: '32 урока',
-                level: 'Начинающие',
-                details: 'Углубленное изучение Scratch с созданием многоуровневых игр. Работа с переменными, списками, клонами. Создание собственных блоков и функций. Разработка 10+ проектов разной сложности с публикацией в сообществе Scratch.'
-              },
-              { 
-                title: 'Python Start', 
-                age: '11-14 лет', 
-                icon: '🐍',
-                desc: 'Изучаем настоящий язык программирования и создаем первые приложения',
-                duration: '36 уроков',
-                level: 'Средний',
-                details: 'Изучение синтаксиса Python, переменных, функций, циклов и условий. Работа с библиотеками turtle и pygame. Создание консольных игр и графических приложений. Основы работы с файлами и данными. 8-10 практических проектов.'
-              },
-              { 
-                title: 'Веб-разработка', 
-                age: '12-16 лет', 
-                icon: '🌐',
-                desc: 'HTML, CSS, JavaScript — создаем настоящие веб-сайты',
-                duration: '40 уроков',
-                level: 'Средний',
-                details: 'Полный цикл создания современных веб-сайтов. Вёрстка HTML5 и стилизация CSS3. Адаптивный дизайн и flexbox/grid. JavaScript для интерактивности. Работа с формами и API. Создание 5-7 реальных сайтов для портфолио.'
-              },
-              { 
-                title: 'Python Advanced', 
-                age: '13-16 лет', 
-                icon: '⚡',
-                desc: 'ООП, алгоритмы, работа с API и базами данных',
-                duration: '48 уроков',
-                level: 'Продвинутый',
-                details: 'Объектно-ориентированное программирование, классы и наследование. Работа с базами данных SQLite. Создание Telegram-ботов. REST API и парсинг данных. Алгоритмы сортировки и поиска. Разработка полноценных приложений с базой данных.'
-              },
-              { 
-                title: 'Game Dev', 
-                age: '14-16 лет', 
-                icon: '🎯',
-                desc: 'Создаем игры на Unity и изучаем C#',
-                duration: '52 урока',
-                level: 'Продвинутый',
-                details: 'Профессиональная разработка игр в Unity. Изучение C# и принципов геймдизайна. Работа с физикой, коллизиями, анимацией. Создание 2D и 3D игр. UI/UX для игр. Публикация игр в App Store и Google Play. Создание 4-5 полноценных игр.'
-              }
-            ].map((course, i) => (
-              <div key={i} className="perspective-1000 h-full">
+            {/* Snake Game */}
+            <Card className="overflow-hidden">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Icon name="Gamepad2" size={24} />
+                  Змейка
+                </CardTitle>
+                <CardDescription>
+                  {snakeGame.gameOver ? 'Игра окончена!' : `Очки: ${snakeGame.score}`}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
                 <div 
-                  className={`relative w-full h-full transition-transform duration-700 transform-style-3d ${
-                    flippedCard === i ? 'rotate-y-180' : ''
-                  }`}
-                  style={{ transformStyle: 'preserve-3d', minHeight: '460px' }}
+                  className="bg-gradient-to-br from-green-100 to-emerald-200 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  tabIndex={0}
+                  onKeyDown={handleSnakeKeyPress}
                 >
-                  <Card className={`border-2 hover:shadow-xl transition-all hover:-translate-y-2 overflow-hidden flex flex-col h-full ${
-                    flippedCard === i ? 'invisible' : 'visible'
-                  }`}>
-                    <div className="h-2 bg-gradient-to-r from-primary to-secondary"></div>
-                    <CardHeader className="flex-grow">
-                      <div className="flex items-center justify-between mb-4">
-                        <span className="text-5xl">{course.icon}</span>
-                        <Badge variant="secondary">{course.age}</Badge>
-                      </div>
-                      <CardTitle className="text-2xl font-montserrat">{course.title}</CardTitle>
-                      <CardDescription className="text-base min-h-[48px]">{course.desc}</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-3 mt-auto">
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Icon name="Clock" size={16} />
-                        <span>{course.duration}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Icon name="BarChart" size={16} />
-                        <span>{course.level}</span>
-                      </div>
-                      <Button className="w-full mt-4" onClick={() => toggleCard(i)}>
-                        Узнать подробнее
-                      </Button>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card className={`border-2 overflow-y-auto absolute top-0 left-0 w-full h-full flex flex-col ${
-                    flippedCard === i ? 'visible' : 'invisible'
-                  }`}
-                    style={{ transform: 'rotateY(180deg)', backfaceVisibility: 'hidden' }}
-                  >
-                    <div className="h-2 bg-gradient-to-r from-secondary to-primary"></div>
-                    <CardHeader className="pb-3">
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-xl font-montserrat pr-2">{course.title}</CardTitle>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={() => toggleCard(i)}
-                          className="hover:bg-accent flex-shrink-0"
-                        >
-                          <Icon name="X" size={20} />
-                        </Button>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-3 flex-grow pb-6">
-                      <p className="text-xs leading-relaxed text-muted-foreground">
-                        {course.details}
-                      </p>
-                      <div className="space-y-1.5 pt-2 border-t">
-                        <div className="flex items-center gap-2 text-xs">
-                          <Icon name="Clock" size={14} className="text-primary" />
-                          <span className="font-semibold">{course.duration}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-xs">
-                          <Icon name="BarChart" size={14} className="text-primary" />
-                          <span className="font-semibold">{course.level}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-xs">
-                          <Icon name="Users" size={14} className="text-primary" />
-                          <span className="font-semibold">До 6 человек в группе</span>
-                        </div>
-                      </div>
-                      <Button className="w-full mt-3" onClick={() => toggleCard(i)} size="sm">
-                        Вернуться назад
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section id="teachers" className="py-20 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-montserrat font-bold text-foreground mb-4">
-              Наши преподаватели
-            </h2>
-            <p className="text-xl text-muted-foreground">
-              Профессионалы с педагогическим и техническим образованием
-            </p>
-          </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[
-              { name: 'Анна Смирнова', role: 'Python & Web', exp: '6 лет опыта', spec: 'Ex-Yandex, преподаватель года 2023' },
-              { name: 'Дмитрий Козлов', role: 'Scratch & GameDev', exp: '5 лет опыта', spec: 'Создатель обучающих игр' },
-              { name: 'Мария Петрова', role: 'Младшие группы', exp: '7 лет опыта', spec: 'Педагог-психолог, магистр IT' }
-            ].map((teacher, i) => (
-              <Card key={i} className="border-2 hover:shadow-lg transition-all text-center">
-                <CardHeader>
-                  <div className="relative mx-auto mb-4">
-                    <img 
-                      src="https://cdn.poehali.dev/projects/a5c90dd4-c760-4d2d-9991-4433d1bfb938/files/aba775de-0115-4cd1-ad55-080e685931c4.jpg" 
-                      alt={teacher.name}
-                      className="w-32 h-32 rounded-full object-cover mx-auto border-4 border-primary/20"
-                    />
-                    <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-secondary rounded-full flex items-center justify-center">
-                      <Icon name="CheckCircle" size={20} className="text-white" />
-                    </div>
-                  </div>
-                  <CardTitle className="text-xl font-montserrat">{teacher.name}</CardTitle>
-                  <CardDescription className="text-base font-semibold text-primary">{teacher.role}</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <p className="text-sm text-muted-foreground flex items-center justify-center gap-2">
-                    <Icon name="Award" size={16} />
-                    {teacher.exp}
-                  </p>
-                  <p className="text-sm">{teacher.spec}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section id="success" className="py-20 bg-gradient-to-b from-accent/20 to-white">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-montserrat font-bold text-foreground mb-4">
-              Успехи учеников
-            </h2>
-            <p className="text-xl text-muted-foreground">
-              Гордимся достижениями наших студентов!
-            </p>
-          </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[
-              { name: 'Максим, 12 лет', project: 'Создал игру "Космический бой"', result: '1000+ скачиваний в App Store', emoji: '🎮' },
-              { name: 'София, 10 лет', project: 'Сайт для школьного проекта', result: 'Победа в школьной олимпиаде', emoji: '🏆' },
-              { name: 'Артем, 14 лет', project: 'Telegram-бот помощник', result: '500+ активных пользователей', emoji: '🤖' },
-              { name: 'Алиса, 11 лет', project: 'Анимационный мультфильм', result: 'Приз на фестивале детского творчества', emoji: '🎬' },
-              { name: 'Даниил, 13 лет', project: 'Python-калькулятор', result: 'Поступил в IT-лицей', emoji: '📊' },
-              { name: 'Кира, 9 лет', project: 'Интерактивная сказка', result: 'Опубликована на Scratch', emoji: '📚' }
-            ].map((student, i) => (
-              <Card key={i} className="border-2 hover:shadow-lg transition-all">
-                <CardHeader>
-                  <div className="flex items-center gap-4 mb-2">
-                    <div className="w-12 h-12 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center text-2xl">
-                      {student.emoji}
-                    </div>
-                    <div>
-                      <CardTitle className="text-lg font-montserrat">{student.name}</CardTitle>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <p className="font-semibold text-foreground">{student.project}</p>
-                  <p className="text-sm text-muted-foreground flex items-start gap-2">
-                    <Icon name="Trophy" size={16} className="text-secondary mt-0.5 flex-shrink-0" />
-                    <span>{student.result}</span>
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section id="reviews" className="py-20 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-montserrat font-bold text-foreground mb-4">
-              Отзывы родителей
-            </h2>
-            <p className="text-xl text-muted-foreground">
-              Что говорят о нас
-            </p>
-          </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[
-              { 
-                name: 'Елена Иванова', 
-                child: 'Мама Саши, 11 лет',
-                text: 'Сын занимается уже полгода. Прогресс невероятный! Из ребенка, который только играл в игры, вырос начинающий разработчик. Преподаватели находят подход к каждому.',
-                rating: 5
-              },
-              { 
-                name: 'Сергей Петров', 
-                child: 'Папа Кати, 9 лет',
-                text: 'Дочка с нетерпением ждет каждого урока. Это лучший показатель качества! Уроки интересные, преподаватель объясняет доступно. Рекомендую всем!',
-                rating: 5
-              },
-              { 
-                name: 'Ольга Сидорова', 
-                child: 'Мама Максима, 13 лет',
-                text: 'Отличная школа! Сын научился не только программировать, но и логически мыслить. Проекты действительно интересные. Цена полностью оправдана.',
-                rating: 5
-              }
-            ].map((review, i) => (
-              <Card key={i} className="border-2 hover:shadow-lg transition-all">
-                <CardHeader>
-                  <div className="flex items-center gap-1 mb-2">
-                    {[...Array(review.rating)].map((_, j) => (
-                      <Icon key={j} name="Star" size={20} className="text-secondary fill-current" />
+                  <div className="grid grid-cols-20 gap-0">
+                    {Array.from({length: 20}).map((_, y) => (
+                      Array.from({length: 20}).map((_, x) => {
+                        const isSnake = snakeGame.snake.some(s => s.x === x && s.y === y);
+                        const isHead = snakeGame.snake[0]?.x === x && snakeGame.snake[0]?.y === y;
+                        const isFood = snakeGame.food.x === x && snakeGame.food.y === y;
+                        
+                        return (
+                          <div
+                            key={`${x}-${y}`}
+                            className={`aspect-square ${
+                              isHead ? 'bg-purple-600 rounded-sm' :
+                              isSnake ? 'bg-purple-400 rounded-sm' :
+                              isFood ? 'bg-red-500 rounded-full' :
+                              'bg-transparent'
+                            }`}
+                          />
+                        );
+                      })
                     ))}
                   </div>
-                  <CardTitle className="text-lg font-montserrat">{review.name}</CardTitle>
-                  <CardDescription>{review.child}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground italic">"{review.text}"</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section id="trial" className="py-20 bg-gradient-to-r from-primary to-secondary text-white">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="text-4xl md:text-5xl font-montserrat font-bold mb-4">
-                Запишитесь на бесплатный пробный урок
-              </h2>
-              <p className="text-xl opacity-90">
-                Познакомимся, определим уровень ребенка и покажем, как проходят занятия
-              </p>
-            </div>
-            <Card className="border-0 shadow-2xl">
-              <CardContent className="p-8">
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="parentName">Ваше имя</Label>
-                      <Input 
-                        id="parentName" 
-                        placeholder="Как к вам обращаться?"
-                        value={formData.parentName}
-                        onChange={(e) => setFormData({...formData, parentName: e.target.value})}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="childName">Имя ребенка</Label>
-                      <Input 
-                        id="childName" 
-                        placeholder="Имя вашего ребенка"
-                        value={formData.childName}
-                        onChange={(e) => setFormData({...formData, childName: e.target.value})}
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="childAge">Возраст ребенка</Label>
-                      <Input 
-                        id="childAge" 
-                        type="number"
-                        placeholder="Сколько лет?"
-                        min="7"
-                        max="16"
-                        value={formData.childAge}
-                        onChange={(e) => setFormData({...formData, childAge: e.target.value})}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Телефон</Label>
-                      <Input 
-                        id="phone" 
-                        type="tel"
-                        placeholder="+7 (999) 123-45-67"
-                        value={formData.phone}
-                        onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input 
-                      id="email" 
-                      type="email"
-                      placeholder="your@email.com"
-                      value={formData.email}
-                      onChange={(e) => setFormData({...formData, email: e.target.value})}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="comment">Комментарий (необязательно)</Label>
-                    <Textarea 
-                      id="comment" 
-                      placeholder="Расскажите о интересах ребенка или задайте вопросы"
-                      value={formData.comment}
-                      onChange={(e) => setFormData({...formData, comment: e.target.value})}
-                      rows={4}
-                    />
-                  </div>
-                  <Button 
-                    type="submit" 
-                    size="lg" 
-                    className="w-full bg-gradient-to-r from-primary to-secondary text-white hover:opacity-90 text-lg py-6"
-                  >
-                    Записаться на бесплатный урок
-                  </Button>
-                  <p className="text-center text-sm text-muted-foreground">
-                    Нажимая кнопку, вы соглашаетесь с политикой конфиденциальности
+                </div>
+                {!snakeGame.started && (
+                  <p className="text-center text-sm text-gray-500 mt-2">
+                    Используй стрелки для управления
                   </p>
-                </form>
+                )}
+                {snakeGame.gameOver && (
+                  <Button onClick={resetSnakeGame} className="w-full mt-2">
+                    Играть снова
+                  </Button>
+                )}
               </CardContent>
             </Card>
           </div>
         </div>
       </section>
 
-      <section id="contact" className="py-20 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center">
-            <h2 className="text-4xl md:text-5xl font-montserrat font-bold text-foreground mb-8">
-              Остались вопросы?
-            </h2>
-            <p className="text-xl text-muted-foreground mb-12">
-              Свяжитесь с нами удобным способом
-            </p>
-            <div className="grid md:grid-cols-3 gap-8">
-              <Card className="border-2 hover:shadow-lg transition-all">
+      {/* Courses Section */}
+      <section className="py-20 px-4">
+        <div className="max-w-7xl mx-auto">
+          <h2 className="text-4xl md:text-5xl font-bold text-center mb-4 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+            Наши курсы 📚
+          </h2>
+          <p className="text-center text-gray-600 mb-12 text-lg">
+            Подберём программу под возраст и интересы ребёнка
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {courses.map((course, index) => (
+              <Card key={index} className="overflow-hidden hover:shadow-2xl transition-all hover:-translate-y-2">
+                <div className={`h-32 bg-gradient-to-br ${course.color} flex items-center justify-center`}>
+                  <Icon name={course.icon as any} size={48} className="text-white" />
+                </div>
                 <CardHeader>
-                  <div className="w-16 h-16 bg-accent rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Icon name="Phone" size={28} className="text-primary" />
-                  </div>
-                  <CardTitle className="font-montserrat">Телефон</CardTitle>
+                  <Badge className="w-fit mb-2">{course.age}</Badge>
+                  <CardTitle>{course.title}</CardTitle>
+                  <CardDescription>{course.description}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-lg font-semibold">+7 (999) 123-45-67</p>
-                  <p className="text-sm text-muted-foreground mt-2">Пн-Вс: 9:00 - 21:00</p>
+                  <Button variant="outline" className="w-full">
+                    Подробнее →
+                  </Button>
                 </CardContent>
               </Card>
-              <Card className="border-2 hover:shadow-lg transition-all">
-                <CardHeader>
-                  <div className="w-16 h-16 bg-accent rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Icon name="Mail" size={28} className="text-primary" />
-                  </div>
-                  <CardTitle className="font-montserrat">Email</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-lg font-semibold">info@hellocode.ru</p>
-                  <p className="text-sm text-muted-foreground mt-2">Ответим за 2 часа</p>
-                </CardContent>
-              </Card>
-              <Card className="border-2 hover:shadow-lg transition-all">
-                <CardHeader>
-                  <div className="w-16 h-16 bg-accent rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Icon name="MessageCircle" size={28} className="text-primary" />
-                  </div>
-                  <CardTitle className="font-montserrat">Telegram</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-lg font-semibold">@hellocode_school</p>
-                  <p className="text-sm text-muted-foreground mt-2">Быстрые ответы</p>
-                </CardContent>
-              </Card>
-            </div>
+            ))}
           </div>
         </div>
       </section>
 
-      <footer className="bg-foreground text-white py-12">
-        <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-4 gap-8 mb-8">
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center text-white font-bold">
-                  {'</>'}
+      {/* Features Section */}
+      <section className="py-20 px-4 bg-white/50 backdrop-blur">
+        <div className="max-w-7xl mx-auto">
+          <h2 className="text-4xl md:text-5xl font-bold text-center mb-16 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+            Почему Hello Code? 💡
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {features.map((feature, index) => (
+              <div key={index} className="text-center">
+                <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center transform hover:scale-110 transition-transform">
+                  <Icon name={feature.icon as any} size={36} className="text-white" />
                 </div>
-                <span className="text-xl font-montserrat font-bold">Hello Code</span>
+                <h3 className="font-bold text-xl mb-2">{feature.title}</h3>
+                <p className="text-gray-600">{feature.description}</p>
               </div>
-              <p className="text-sm text-gray-400">
-                Онлайн школа программирования для детей 7-16 лет
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-20 px-4">
+        <div className="max-w-4xl mx-auto">
+          <Card className="overflow-hidden border-4 border-purple-200">
+            <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-8 text-white text-center">
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">
+                Запишитесь на бесплатный пробный урок! 🎁
+              </h2>
+              <p className="text-lg opacity-90">
+                Познакомимся с ребёнком, покажем платформу и создадим первый проект
               </p>
             </div>
-            <div>
-              <h4 className="font-montserrat font-semibold mb-4">Курсы</h4>
-              <ul className="space-y-2 text-sm text-gray-400">
-                <li><a href="#courses" className="hover:text-white transition-colors">Scratch</a></li>
-                <li><a href="#courses" className="hover:text-white transition-colors">Python</a></li>
-                <li><a href="#courses" className="hover:text-white transition-colors">Веб-разработка</a></li>
-                <li><a href="#courses" className="hover:text-white transition-colors">Game Dev</a></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-montserrat font-semibold mb-4">О школе</h4>
-              <ul className="space-y-2 text-sm text-gray-400">
-                <li><a href="#about" className="hover:text-white transition-colors">О нас</a></li>
-                <li><a href="#teachers" className="hover:text-white transition-colors">Преподаватели</a></li>
-                <li><a href="#reviews" className="hover:text-white transition-colors">Отзывы</a></li>
-                <li><a href="#trial" className="hover:text-white transition-colors">Записаться</a></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-montserrat font-semibold mb-4">Контакты</h4>
-              <ul className="space-y-2 text-sm text-gray-400">
-                <li>+7 (999) 123-45-67</li>
-                <li>info@hellocode.ru</li>
-                <li>@hellocode_school</li>
-              </ul>
+            <CardContent className="p-8">
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="parentName">Имя родителя</Label>
+                    <Input
+                      id="parentName"
+                      value={formData.parentName}
+                      onChange={(e) => setFormData({...formData, parentName: e.target.value})}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="childName">Имя ребёнка</Label>
+                    <Input
+                      id="childName"
+                      value={formData.childName}
+                      onChange={(e) => setFormData({...formData, childName: e.target.value})}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="childAge">Возраст ребёнка</Label>
+                    <Input
+                      id="childAge"
+                      type="number"
+                      min="5"
+                      max="17"
+                      value={formData.childAge}
+                      onChange={(e) => setFormData({...formData, childAge: e.target.value})}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="phone">Телефон</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                    required
+                  />
+                </div>
+
+                <Button type="submit" size="lg" className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-lg py-6">
+                  Записаться на пробный урок 🚀
+                </Button>
+
+                <p className="text-sm text-center text-gray-500">
+                  Нажимая кнопку, вы соглашаетесь с политикой обработки персональных данных
+                </p>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-gray-900 text-white py-12 px-4">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div>
+            <h3 className="text-2xl font-bold mb-4 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+              Hello Code
+            </h3>
+            <p className="text-gray-400">
+              Онлайн-школа программирования для детей от 5 до 17 лет
+            </p>
+          </div>
+          <div>
+            <h4 className="font-bold mb-4">Контакты</h4>
+            <div className="space-y-2 text-gray-400">
+              <p>📧 info@hellocode.ru</p>
+              <p>📱 +7 (999) 123-45-67</p>
+              <p>⏰ Пн-Вс: 10:00 - 20:00</p>
             </div>
           </div>
-          <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-sm text-gray-400">© 2024 Hello Code. Все права защищены.</p>
-            <div className="flex gap-6 text-sm text-gray-400">
-              <a href="#" className="hover:text-white transition-colors">Политика конфиденциальности</a>
-              <a href="#" className="hover:text-white transition-colors">Договор оферты</a>
+          <div>
+            <h4 className="font-bold mb-4">Мы в соцсетях</h4>
+            <div className="flex gap-4">
+              <Button size="icon" variant="outline" className="rounded-full">
+                <Icon name="Send" size={20} />
+              </Button>
+              <Button size="icon" variant="outline" className="rounded-full">
+                <Icon name="Youtube" size={20} />
+              </Button>
+              <Button size="icon" variant="outline" className="rounded-full">
+                <Icon name="Instagram" size={20} />
+              </Button>
             </div>
           </div>
+        </div>
+        <div className="max-w-7xl mx-auto mt-8 pt-8 border-t border-gray-800 text-center text-gray-400">
+          <p>© 2024 Hello Code. Все права защищены.</p>
         </div>
       </footer>
     </div>
